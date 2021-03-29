@@ -1,8 +1,10 @@
 # from pathlib import Path
 # import numpy as np
 import torch
+import torch.nn as nn
 from collections import OrderedDict
-
+from typing import List
+from goodok_mlu.utils import rgetattr
 
 params_aliases = [
     {"old_key_starts": 'surfacepred.p1.',
@@ -120,6 +122,31 @@ def load_model_variants(pl_model, model, model_path):
 
 def count_params(model):
     return sum(p.numel() for p in model.parameters())
+
+
+# from kekas
+
+def set_grad(module: nn.Module, requires_grad: bool) -> None:
+    for param in module.parameters():
+        param.requires_grad = requires_grad
+
+
+def freeze_by_names(module: nn.Module, modules_to_freeze : List[str]) -> None:
+    """
+        freeze parts of module by list of submodule names, recursively
+        Examples:
+            freeze_by_names(model, ['unet.Decoder', 'unet.Encoder']) - freeze all nested layers of decoder and encoder
+            freeze_by_names(model, ['model.encoder.process_sparse.0'])
+    """
+    prefix = ""
+    for s in modules_to_freeze:
+        print("\n", f'freeze module "{s}"', "\n")
+        m_to_freeze = rgetattr(module, s)
+        modules = m_to_freeze.named_modules(prefix=prefix)
+        for i, named_m in enumerate(modules):
+            name = named_m[0]
+            m = named_m[1]
+            set_grad(m, requires_grad=False)
 
 
 def sparse_to_tensors(sparse):

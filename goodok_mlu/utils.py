@@ -9,6 +9,7 @@ import git
 import warnings
 import tempfile
 import numpy as np
+import functools
 
 
 def dict_flatten(d, parent_key='', sep='_'):
@@ -212,6 +213,30 @@ def is_notebook():
         return True
     except Exception:
         return False
+
+
+def rgetattr(obj, path: str, *default):
+    """
+    Get object attribute recursively
+    :param obj: Object
+    :param path: 'attr1.attr2.etc'
+    :param default: Optional default value, at any point in the path
+    :return: obj.attr1.attr2.etc
+
+    https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
+    """
+    DELIMITER = "."
+    attrs = path.split(DELIMITER)
+    try:
+        return functools.reduce(getattr, attrs, obj)
+    except AttributeError:
+        if default:
+            return default[0]
+        raise
+
+def rsetattr(obj, attr, val):
+    pre, _, post = attr.rpartition('.')
+    return setattr(rgetattr(obj, pre) if pre else obj, post, val)
 
 
 # TODO: move to sparse

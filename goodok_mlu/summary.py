@@ -26,14 +26,16 @@ def get_trainable_parameters(model, with_class=False):
         if with_class:
             name, class_name = name
 
-        if p.requires_grad:
-            shape = " x ".join([str(i) for i in list(p.shape)])
-            number = p.numel()
-            d = {'name': name, 'shape': shape, 'number': number}
-            if with_class:
-                d['class'] = class_name
-            params.append(d)
-            total_number += number
+        requires_grad = p.requires_grad
+
+        shape = " x ".join([str(i) for i in list(p.shape)])
+        number = p.numel()
+        p_np = p.cpu().detach().numpy()
+        d = {'name': name, 'shape': shape, 'number': number, 'sum':p_np.sum(), 'mean':p_np.mean(), 'requires_grad':requires_grad}
+        if with_class:
+            d['class'] = class_name
+        params.append(d)
+        total_number += number
     df_params = pd.DataFrame(params)
     return {'df_params': df_params, 'total_number': total_number}
 
